@@ -1,41 +1,27 @@
 import { test as baseTest, expect, type Page } from '@playwright/test';
 import * as fs from 'fs';
-
+import { TodoPage } from '../pages/todo.page';
 import { createHttpClient, type HttpClient } from '../api';
 import {
   authStorageStatePath,
   restoreSessionStorage,
 } from '../auth/sessionStorage';
 import { isCognitoMode } from '../data/constants';
+import { DocsPage } from '../pages/docs.page';
 import { ExamplePage } from '../pages/ExamplePage';
+import { PlaywrightHomePage } from '../pages/playwright-home.page';
 
-/**
- * Custom Fixtures Type Definition
- * Candidates should register their candidate-authored Page Object Models here.
- *
- * Example:
- * export type CustomFixtures = {
- *   loginPage: LoginPage;
- *   dashboardPage: DashboardPage;
- * };
- */
 export type CustomFixtures = {
-  /** Generic HTTP client for API specs. */
   httpApi: HttpClient;
-  /** App page: Cognito session when enabled, else plain `{ page }`. */
   appPage: Page;
   authenticatedPage: Page;
   freshAuthPage: Page;
-  /** Example POM for the default playwright.dev smoke target. */
   examplePage: ExamplePage;
-  // Add custom page object fixture types here
+  playwrightHomePage: PlaywrightHomePage;
+  docsPage: DocsPage;
+  todoPage: TodoPage;
 };
 
-/**
- * Extended Playwright Test Instance
- * Use this extended test fixture across all spec files (*.spec.ts).
- * Never instantiate Page Objects directly using `new MyPage(page)` inside specs.
- */
 export const test = baseTest.extend<CustomFixtures>({
   httpApi: async ({ request }, use) => {
     await use(createHttpClient(request));
@@ -97,11 +83,20 @@ export const test = baseTest.extend<CustomFixtures>({
     await use(new ExamplePage(appPage));
   },
 
-  // Register additional fixture implementations here. Example:
-  // loginPage: async ({ page }, use) => {
-  //   const loginPage = new LoginPage(page);
-  //   await use(loginPage);
-  // },
+  playwrightHomePage: async ({ appPage }, use) => {
+    const homePage = new PlaywrightHomePage(appPage);
+    await use(homePage);
+  },
+
+  docsPage: async ({ appPage }, use) => {
+    const docsPage = new DocsPage(appPage);
+    await use(docsPage);
+  },
+
+  todoPage: async ({ appPage }, use) => {
+    const todoPage = new TodoPage(appPage);
+    await use(todoPage);
+  },
 });
 
 export { expect };
