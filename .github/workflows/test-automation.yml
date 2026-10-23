@@ -1,63 +1,74 @@
-name: Playwright Test Automation Pipeline
+name: Production-Grade Test Automation Pipeline
 
 on:
   push:
-    branches: [ main ]
+    branches:
+      - main
+      - 'submission-tier*/**'
+      - 'submission/**'
   pull_request:
-    branches: [ main ]
+    branches:
+      - main
+  workflow_dispatch:
 
 concurrency:
-  group: e2e-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  test:
-    name: Playwright Test Execution
-    timeout-minutes: 15
+  test-automation:
+    name: Test Automation (${{ matrix.browser }})
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, firefox, webkit]
+
+    env:
+      CI: 'true'
+      PLAYWRIGHT_JSON_REPORT: test-results/report.json
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: Setup Node.js Environment
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 20.x
           cache: 'npm'
 
-      - name: Install Dependencies
+      - name: Install Clean Dependencies
         run: npm ci
 
-      - name: TypeCheck & Static Analysis
+      - name: Install Playwright Browsers & OS Dependencies
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+
+      - name: Typecheck & Static Code Analysis
         run: npm run typecheck
 
-      - name: Install Playwright Browsers
-        run: npx playwright install --with-deps chromium
+      - name: Run Security & Data Governance Unit Suite
+        run: npx playwright test tests/unit/security-sanitizer.spec.ts
 
-      - name: Run Playwright Smoke Tests
-        run: npm run test:smoke
-        env:
-          CI: 'true'
-          BASE_URL: ${{ vars.BASE_URL || 'https://playwright.dev' }}
+      - name: Run Playwright Regression Test Suite
+        run: npx playwright test tests/regression --project=${{ matrix.browser }}
 
-      - name: Upload Test Report Artifacts
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: playwright-report
-          path: |
-            playwright-report/
-            test-results/report.json
-          retention-days: 14
-          if-no-files-found: warn
-
-      - name: Upload failure traces
+      - name: Upload Test Report & Trace Artifacts on Failure
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: playwright-failure-traces-screenshots
+          name: playwright-artifacts-${{ matrix.browser }}
           path: |
-            test-results/**/*.zip
-            test-results/**/*.png
+            playwright-report/
+            test-results/
           retention-days: 14
           if-no-files-found: ignore
+
+      - name: Automated AI Test Failure Triage
+        if: always()
+        run: npm run triage
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PLAYWRIGHT_JSON_REPORT: test-results/report.json

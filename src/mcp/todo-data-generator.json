@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "name": "generate_todo_dataset",
+  "title": "GenerateTodoDatasetTool",
+  "description": "JSON-RPC Model Context Protocol (MCP) tool schema for generating synthetic TodoMVC datasets supporting parameterized and data-driven testing with strict typing.",
+  "type": "object",
+  "parameters": {
+    "type": "object",
+    "properties": {
+      "count": {
+        "type": "number",
+        "minimum": 1,
+        "maximum": 500,
+        "description": "Total number of todo items to generate"
+      },
+      "includeSpecialChars": {
+        "type": "boolean",
+        "description": "Flag indicating whether items should include Unicode, emojis, accents, and extreme length boundary strings"
+      },
+      "state": {
+        "type": "string",
+        "enum": ["active", "completed", "mixed"],
+        "description": "Initial target completion state distribution of generated todo items ('active', 'completed', or 'mixed')"
+      }
+    },
+    "required": ["count", "includeSpecialChars", "state"],
+    "additionalProperties": false
+  },
+  "inputSchema": {
+    "type": "object",
+    "properties": {
+      "count": {
+        "type": "number",
+        "minimum": 1,
+        "maximum": 500,
+        "description": "Total number of todo items to generate"
+      },
+      "includeSpecialChars": {
+        "type": "boolean",
+        "description": "Flag indicating whether items should include Unicode, emojis, accents, and extreme length boundary strings"
+      },
+      "state": {
+        "type": "string",
+        "enum": ["active", "completed", "mixed"],
+        "description": "Initial target completion state distribution of generated todo items ('active', 'completed', or 'mixed')"
+      }
+    },
+    "required": ["count", "includeSpecialChars", "state"],
+    "additionalProperties": false
+  },
+  "returns": {
+    "type": "array",
+    "description": "Typed array of generated TodoItem objects",
+    "items": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique deterministic identifier for the todo item"
+        },
+        "title": {
+          "type": "string",
+          "description": "Todo text description or boundary payload"
+        },
+        "completed": {
+          "type": "boolean",
+          "description": "Boolean flag indicating whether the item is in completed state"
+        },
+        "category": {
+          "type": "string",
+          "enum": ["standard", "unicode", "boundary_long", "special_symbols"],
+          "description": "Equivalence partition category of the generated item"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "ISO 8601 creation timestamp"
+        }
+      },
+      "required": ["id", "title", "completed", "category", "createdAt"],
+      "additionalProperties": false
+    }
+  }
+}

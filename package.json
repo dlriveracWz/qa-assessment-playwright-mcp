@@ -13,6 +13,7 @@
     "test:ui": "playwright test --ui",
     "test:report": "playwright show-report",
     "report": "playwright show-report",
+    "triage": "ts-node scripts/ai-triage.ts",
     "setup": "npx playwright install"
   },
   "keywords": [
